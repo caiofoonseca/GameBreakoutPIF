@@ -13,6 +13,25 @@ fi
 
 
 # Linhas de comando
+Como executar o Breakout Game:
+
+I - Abra o navegador da web e acesse https://replit.com/~
+
+II - Faça login na sua conta Replit ou crie uma, se necessário.
+
+III - Clique em "New Repl" para criar um novo projeto.
+
+IV - Selecione a linguagem C.
+
+V - Copie e cole o código do jogo Breakout na área de edição do Replit.
+
+VI - Instale a biblioteca do Replit (CLI-LIB)
+
+VII - Adicione os arquivos keyboard.h, keyboard.c e o breakoutgamefinal.c
+
+VIII - No terminal do Replit, execute o comando de compilação.
+
+IX - Use os controles do jogo conforme indicado na apresentação e instruções do jogo.
 
 Assim que inicializar o código, o usuário se depara com a tela de menu, com o nome do nosso jogo e 3 opções para ele selecionar, dentre elas estão:
 
