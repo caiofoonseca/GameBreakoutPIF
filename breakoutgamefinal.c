@@ -9,11 +9,11 @@
 #define LARGURA_TELA 40
 #define ALTURA_TELA 20
 #define NUM_BLOCOS_LINHA 10
-#define NUM_BLOCOS_COLUNA 2 // Duas fileiras de blocos
+#define NUM_BLOCOS_COLUNA 2
 #define NUM_BLOCOS (NUM_BLOCOS_LINHA * NUM_BLOCOS_COLUNA)
-#define NUM_BLOCOS_FACIL 10   // Menos blocos para facilitar
-#define NUM_BLOCOS_MEDIO 16   // Mais blocos para dificultar
-#define NUM_BLOCOS_DIFICIL 20 // Ainda mais blocos para maior dificuldade
+#define NUM_BLOCOS_FACIL 10
+#define NUM_BLOCOS_MEDIO 16
+#define NUM_BLOCOS_DIFICIL 20
 
 struct Paleta {
   int x, y;
@@ -32,68 +32,92 @@ struct Jogador {
 struct Bloco {
   int x, y;
   int quebrado;
+  int interativo; 
 };
+
+char tela[ALTURA_TELA][LARGURA_TELA]; 
 
 void inicializarBlocos(struct Bloco blocos[], int quantidadeTijolos) {
   for (int i = 0; i < NUM_BLOCOS; i++) {
     blocos[i].quebrado = 0;
+    blocos[i].interativo = 1; 
   }
 
   int numFileiras = quantidadeTijolos / NUM_BLOCOS_LINHA;
   int larguraBloco = LARGURA_TELA / NUM_BLOCOS_LINHA;
   int alturaBloco = 1;
-  int espacamentoHorizontal = larguraBloco;
   int espacamentoVertical = 2;
 
   for (int i = 0; i < numFileiras; i++) {
     for (int j = 0; j < NUM_BLOCOS_LINHA; j++) {
       int indiceBloco = i * NUM_BLOCOS_LINHA + j;
 
-      blocos[indiceBloco].x = j * larguraBloco + espacamentoHorizontal;
+      blocos[indiceBloco].x = j * larguraBloco;
       blocos[indiceBloco].y = i * espacamentoVertical;
       blocos[indiceBloco].quebrado = 0;
     }
   }
 }
+
 void limparTela() {
-  printf("\033[H\033[J");
+  printf("\033[H\033[J"); 
 }
-void desenhar(struct Paleta *paleta, struct Bola *bola, struct Bloco blocos[]) {
+
+void atualizarTela(struct Paleta *paleta, struct Bola *bola, struct Bloco blocos[]) {
   limparTela();
 
   int larguraBloco = LARGURA_TELA / NUM_BLOCOS_LINHA;
+  char linha[LARGURA_TELA + 1]; 
 
   for (int i = 0; i < ALTURA_TELA; i++) {
-    for (int j = 0; j < LARGURA_TELA; j++) {
-      if (i == paleta->y && j >= paleta->x && j < paleta->x + 5) {
-        printf("-");
-      } else if (i == bola->y && j == bola->x) {
-        printf("O");
-      } else {
-        int colunaBloco = j / larguraBloco;
-        int linhaBloco = i / 2;
-        int indiceBloco = linhaBloco * NUM_BLOCOS_LINHA + colunaBloco;
+    memset(linha, ' ', LARGURA_TELA); 
+    linha[LARGURA_TELA] = '\0'; 
 
-        if (colunaBloco >= 0 && colunaBloco < NUM_BLOCOS_LINHA &&
-            linhaBloco >= 0 && linhaBloco < NUM_BLOCOS_COLUNA) {
-          if (!blocos[indiceBloco].quebrado) {
-            printf("#");
-          } else {
-            printf(" ");
+    if (i == paleta->y) {
+      for (int j = paleta->x; j < paleta->x + 5 && j < LARGURA_TELA; j++) {
+        linha[j] = '-';
+      }
+    } else if (i == bola->y) {
+      linha[bola->x] = 'O';
+    } else if (i < ALTURA_TELA / 2) { 
+      int colunaBloco = i / 2;
+      int indiceBloco = colunaBloco * NUM_BLOCOS_LINHA;
+
+      for (int j = 0; j < NUM_BLOCOS_LINHA; j++) {
+       
+        if (!blocos[indiceBloco + j].quebrado && blocos[indiceBloco + j].interativo) {
+          int posInicial = j * larguraBloco;
+          int posFinal = (j + 1) * larguraBloco - 1;
+
+          int meioBloco = (posInicial + posFinal) / 2;
+
+          for (int k = posInicial; k <= posFinal && k < LARGURA_TELA; k++) {
+            if (i % 2 == 0) {
+              if (k == meioBloco || (k == posInicial && k != meioBloco)) {
+                linha[k] = '[';
+              } else if (k == posFinal && k != meioBloco) {
+                linha[k] = ']';
+              }
+            }
           }
-          j += larguraBloco - 1;
-        } else {
-          printf(" ");
         }
       }
     }
-    printf("\n");
+
+    printf("%s\n", linha);
   }
+
+  
+  for (int i = 0; i < LARGURA_TELA; i++) {
+    printf("-");
+  }
+  printf("\n");
+
+  fflush(stdout);
 }
-int jogarJogo(int velocidade, int quantidadeTijolos) {
-  struct Paleta paleta = {LARGURA_TELA / 2 - 2,
-                          ALTURA_TELA -
-                              2};
+
+int jogarJogo(int quantidadeTijolos) {
+  struct Paleta paleta = {LARGURA_TELA / 2 - 2, ALTURA_TELA - 2};
   struct Bola bola = {LARGURA_TELA / 2, ALTURA_TELA / 2, 1, -1};
   struct Bloco blocos[NUM_BLOCOS];
 
@@ -102,6 +126,7 @@ int jogarJogo(int velocidade, int quantidadeTijolos) {
 
   int blocosQuebrados = 0;
   int jogoAtivo = 1;
+  int velocidade = 150000; 
 
   while (jogoAtivo) {
     if (keyhit()) {
@@ -137,7 +162,7 @@ int jogarJogo(int velocidade, int quantidadeTijolos) {
       bola.dy = -bola.dy;
     }
 
-    desenhar(&paleta, &bola, blocos);
+    atualizarTela(&paleta, &bola, blocos);
 
     if (bola.y >= ALTURA_TELA - 1) {
       jogoAtivo = 0;
@@ -183,7 +208,7 @@ void exibirMenuModoJogo(int *escolhaModo) {
   printf("\nEscolha o modo de jogo:\n");
   printf("1. Fácil\n");
   printf("2. Médio\n");
-  printf("3. Dificil\n");
+  printf("3. Difícil\n");
   printf("===================================\n");
   printf("Escolha uma opcao: ");
   fflush(stdout);
@@ -212,7 +237,7 @@ void digitarNome(char nome[]) {
         nome[i] = tecla;
         i++;
         nome[i] = '\0';
-        printf("%c", tecla); 
+        printf("%c", tecla);
         fflush(stdout);
       }
     }
@@ -222,19 +247,16 @@ void digitarNome(char nome[]) {
 
 int main() {
   srand(time(NULL));
-
   struct Jogador *jogadores = malloc(50 * sizeof(struct Jogador));
   if (jogadores == NULL) {
     fprintf(stderr, "Erro ao alocar memória.\n");
     return 1;
   }
   int numJogadores = 0;
-
   keyboardInit();
 
   while (1) {
     exibirMenu();
-
     int escolha = obterEscolhaMenu();
 
     switch (escolha) {
@@ -243,24 +265,19 @@ int main() {
       exibirMenuModoJogo(&escolhaModo);
 
       int quantidadeTijolos;
-      int velocidade;
       switch (escolhaModo) {
       case 1:
         quantidadeTijolos = NUM_BLOCOS_FACIL;
-        velocidade = 200000;
         break;
       case 2:
         quantidadeTijolos = NUM_BLOCOS_MEDIO;
-        velocidade = 170000;
         break;
       case 3:
         quantidadeTijolos = NUM_BLOCOS_DIFICIL;
-        velocidade = 150000;
         break;
       default:
         printf("Escolha inválida. Modo Fácil selecionado por padrão.\n");
         quantidadeTijolos = NUM_BLOCOS_FACIL;
-        velocidade = 50000;
         break;
       }
 
@@ -270,12 +287,10 @@ int main() {
       limparTela();
       printf("Preparando o jogo...");
       fflush(stdout);
-      sleep(3);     
+      sleep(3);
 
-      strcpy(jogadores[numJogadores].nome,
-             nome);
-      jogadores[numJogadores].pontuacao =
-          jogarJogo(velocidade, quantidadeTijolos);
+      strcpy(jogadores[numJogadores].nome, nome);
+      jogadores[numJogadores].pontuacao = jogarJogo(quantidadeTijolos);
       numJogadores++;
 
       break;
@@ -290,7 +305,6 @@ int main() {
           }
         }
       }
-
       printf("\nRanking dos Jogadores:\n");
       for (int i = 0; i < numJogadores; i++) {
         printf("%d. %s: %d\n", i + 1, jogadores[i].nome,
@@ -311,12 +325,12 @@ int main() {
     }
     case 3:
       printf("\nJogo finalizado. Obrigado por jogar!\n");
-      free(jogadores);   
+      free(jogadores);
       keyboardDestroy();
-      exit(0);           
+      exit(0);
     }
   }
-  keyboardDestroy(); 
-  free(jogadores);  
-  return 0; 
+  keyboardDestroy();
+  free(jogadores);
+  return 0;
 }
