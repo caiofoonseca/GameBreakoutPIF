@@ -1,16 +1,13 @@
-all: main
+CC = gcc
 
-CC = clang
-override CFLAGS += -g -Wno-everything -pthread -lm
+CFLAGS = -Wall -std=c99
 
-SRCS = $(shell find . -name '.ccls-cache' -type d -prune -o -type f -name '*.c' -print)
-HEADERS = $(shell find . -name '.ccls-cache' -type d -prune -o -type f -name '*.h' -print)
+SOURCES = breakoutgamefinal.c keyboard.c
 
-main: $(SRCS) $(HEADERS)
-	$(CC) $(CFLAGS) $(SRCS) -o "$@"
+EXECUTABLE = breakout_game
 
-main-debug: $(SRCS) $(HEADERS)
-	$(CC) $(CFLAGS) -O0 $(SRCS) -o "$@"
+all: $(SOURCES)
+	$(CC) $(CFLAGS) $(SOURCES) -o $(EXECUTABLE)
 
 clean:
-	rm -f main main-debug
+	rm -f $(EXECUTABLE)
